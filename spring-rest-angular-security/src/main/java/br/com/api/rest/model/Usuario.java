@@ -1,6 +1,5 @@
 package br.com.api.rest.model;
 
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -15,11 +14,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.UniqueConstraint;
-
+import org.hibernate.validator.constraints.br.CPF;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -28,7 +26,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Entity
 public class Usuario implements UserDetails {
 
-	
 	/**
 	 * 
 	 */
@@ -42,25 +39,20 @@ public class Usuario implements UserDetails {
 	private String login;
 
 	private String senha;
-	
-	private String nome;
-	
-	private String cpf;
-	
-	@OneToMany(mappedBy = "usuario" , orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-	private List<Telefone> telefones = new ArrayList<Telefone>();
-	
-	@OneToMany(fetch = FetchType.EAGER)
-	@JoinTable(name = "usuarios_role", uniqueConstraints = @UniqueConstraint (
-			columnNames = {"usuario_id", "role_id"}, name = "unique_role_user"),
-	joinColumns = @JoinColumn(name = "usuario_id", referencedColumnName = "id" , table = "usuario", unique = false,
-	foreignKey = @ForeignKey(name = "usuario_fk", value = ConstraintMode.CONSTRAINT)),
-	inverseJoinColumns = @JoinColumn (name = "role_id", referencedColumnName = "id", table = "role", unique = false, updatable = false,
-	foreignKey = @ForeignKey(name = "role_fk", value = ConstraintMode.CONSTRAINT)))
-	
-	private List<Role> roles;
 
-	
+	private String nome;
+
+	@CPF(message = "CPf inválido")
+	private String cpf;
+
+	@OneToMany(mappedBy = "usuario", orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	private List<Telefone> telefones = new ArrayList<Telefone>();
+
+	@OneToMany(fetch = FetchType.EAGER)
+	@JoinTable(name = "usuarios_role", uniqueConstraints = @UniqueConstraint(columnNames = { "usuario_id",
+			"role_id" }, name = "unique_role_user"), joinColumns = @JoinColumn(name = "usuario_id", referencedColumnName = "id", table = "usuario", unique = false, foreignKey = @ForeignKey(name = "usuario_fk", value = ConstraintMode.CONSTRAINT)), inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id", table = "role", unique = false, updatable = false, foreignKey = @ForeignKey(name = "role_fk", value = ConstraintMode.CONSTRAINT)))
+
+	private List<Role> roles = new ArrayList<Role>();
 
 	public Long getId() {
 		return id;
@@ -81,11 +73,11 @@ public class Usuario implements UserDetails {
 	public String getSenha() {
 		return senha;
 	}
-	
+
 	public void setSenha(String senha) {
 		this.senha = senha;
 	}
-	
+
 	public String getNome() {
 		return nome;
 	}
@@ -93,11 +85,11 @@ public class Usuario implements UserDetails {
 	public void setNome(String nome) {
 		this.nome = nome;
 	}
-	
+
 	public String getCpf() {
 		return cpf;
 	}
-	
+
 	public void setCpf(String cpf) {
 		this.cpf = cpf;
 	}
@@ -105,14 +97,10 @@ public class Usuario implements UserDetails {
 	public void setTelefones(List<Telefone> telefones) {
 		this.telefones = telefones;
 	}
-	
+
 	public List<Telefone> getTelefones() {
 		return telefones;
 	}
-	
-	
-
-	
 
 	@Override
 	public int hashCode() {
@@ -139,7 +127,7 @@ public class Usuario implements UserDetails {
 		return true;
 	}
 
-	//Acessos do usuário ROLE_ADMIN OU ROLE_VISITANTE
+	// Acessos do usuário ROLE_ADMIN OU ROLE_VISITANTE
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		// TODO Auto-generated method stub
@@ -188,5 +176,4 @@ public class Usuario implements UserDetails {
 		return true;
 	}
 
-	
 }

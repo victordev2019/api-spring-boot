@@ -3,12 +3,12 @@ package br.com.api.rest.controller;
 import java.util.List;
 import java.util.Optional;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.api.rest.model.Usuario;
 import br.com.api.rest.repository.UsuarioRepository;
+import br.com.api.rest.service.UserDetailsServiceImpl;
 
 @RestController
 @RequestMapping(value = "/usuario")
@@ -27,6 +28,9 @@ public class IndexController {
 
 	@Autowired
 	private UsuarioRepository usuarioRepository;
+	
+	@Autowired
+	private UserDetailsServiceImpl userDetailsServiceImpl;
 
 	@GetMapping(value = "/{id}/codigovenda/{venda}", produces = "application/json")
 	public ResponseEntity<Usuario> relatorio(@PathVariable(value = "id") Long id,
@@ -37,10 +41,10 @@ public class IndexController {
 	}
 
 	// Serviço RestFul
-	@GetMapping(value = "/{id}", produces = "application/json", headers = "X-API-VERSION=v1")
-	public ResponseEntity<Usuario>initV1(@PathVariable(value = "id") Long id) {
+	@GetMapping(value = "/{id}", produces = "application/json")
+	public ResponseEntity<Usuario>initV1(@PathVariable(value = "id") String id) throws InterruptedException {
 
-		Optional<Usuario> usuario = usuarioRepository.findById(id);
+		Optional<Usuario> usuario = usuarioRepository.findById(Long.parseLong(id));
 		
 		return new ResponseEntity(usuario.get(), HttpStatus.OK);
 	}
@@ -75,20 +79,24 @@ public class IndexController {
 	}
 
 	@PostMapping(value = "/", produces = "application/json")
-	public ResponseEntity<Usuario> cadastrar(@RequestBody Usuario usuario) {
+	public ResponseEntity<Usuario> cadastrar(@Valid @RequestBody Usuario usuario) {
 
 		usuario.getTelefones().forEach(t -> t.setUsuario(usuario));
 
 		String senhaCriptografada = new BCryptPasswordEncoder().encode(usuario.getSenha());
 		usuario.setSenha(senhaCriptografada);
-		Usuario usurioSalvo = usuarioRepository.save(usuario);
-		return new ResponseEntity<Usuario>(usurioSalvo, HttpStatus.OK);
+		Usuario usuarioSalvo = usuarioRepository.save(usuario);
+		
+		userDetailsServiceImpl.insereAcessoPadrao(usuario.getId());
+		
+		return new ResponseEntity<Usuario>(usuarioSalvo, HttpStatus.OK);
 	}
 
 	@PostMapping(value = "/{iduser}/idvenda/{idvenda}", produces = "application/json")
 	public ResponseEntity<Usuario> cadastrarvenda(@PathVariable Long iduser, @PathVariable Long idvenda) {
 		// Processo de venda
 		// Usuario usurioSalvo = usuarioRepository.save(usuario);
+		
 		return new ResponseEntity("id user: " + iduser + "idvenda :" + iduser, HttpStatus.OK);
 	}
 
@@ -96,7 +104,7 @@ public class IndexController {
 	public ResponseEntity<Usuario> atualizar(@RequestBody Usuario usuario) {
 		usuario.getTelefones().forEach(t -> t.setUsuario(usuario));
 
-		Usuario usarioTemporario = usuarioRepository.findUserByLogin(usuario.getLogin());
+		Usuario usarioTemporario = usuarioRepository.findById(usuario.getId()).get();
 
 		if (!usarioTemporario.getSenha().equals(usuario.getSenha())) {// Se for diferente
 			String senhaCriptografada = new BCryptPasswordEncoder().encode(usuario.getSenha());
